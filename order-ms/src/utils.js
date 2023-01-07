@@ -7,7 +7,7 @@ const OAuth2_client = new OAuth2(GOOGLE_CLIENT_ID, GOOGLE_SECRET, "https://devel
 OAuth2_client.setCredentials({ refresh_token: REFRESH_TOKEN })
 
 const send_email = async (sender, receiver, subject, mailContent) => {
-    const accessToken = OAuth2_client.getAccessToken();
+    const accessToken = await OAuth2_client.getAccessToken();
 
     const transport = nodemailer.createTransport({
         service: 'gmail',
@@ -17,8 +17,8 @@ const send_email = async (sender, receiver, subject, mailContent) => {
             clientId: GOOGLE_CLIENT_ID,
             clientSecret: GOOGLE_SECRET,
             refreshToken: REFRESH_TOKEN,
-            accessToken
-        }
+            accessToken: accessToken.token,
+        },
     });
 
     const mail_options = {
@@ -28,13 +28,12 @@ const send_email = async (sender, receiver, subject, mailContent) => {
         html: mailContent
     }
 
-    console.log("Sending email...");
     await transport.sendMail(mail_options)
         .then(() => {
-            console.log("success");
+            console.log("Email sent successfully!");
         })
         .catch((e) => {
-            console.log(e.message);
+            console.log(e);
         })
         .finally(() => {
             transport.close();

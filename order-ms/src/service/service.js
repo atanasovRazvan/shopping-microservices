@@ -1,21 +1,30 @@
 'use strict';
 const axios = require("axios");
 const send_email = require("../utils");
-const {USER_EMAIL} = require("../config");
+const {USER_EMAIL, MS_URL} = require("../config");
 
 const service = {
     order: async (formDetails) => {
 
         const getProducts = async () => {
             const products = [];
-            await axios.get("http://localhost:8080/products/productsInCart")
+            await axios.get(`${MS_URL}/products/productsInCart`)
                 .then((res) => {
                     products.push(...res.data);
                 });
             return products;
         }
 
-        const composeHtmlContent = (products) => {
+        const getAllProducts = async () => {
+            const allProducts = [];
+            await axios.get(`${MS_URL}/products`)
+                .then((res) => {
+                    allProducts.push(...res.data);
+                });
+            return allProducts;
+        }
+
+        const composeHtmlContent = (products, allProducts) => {
 
             let productListHTML = '';
             if(products.length > 0){
@@ -28,12 +37,23 @@ const service = {
                 productListHTML = productListHTML.concat(`</ul>`);
             }
 
+            const totalPrice = products.reduce((sum, product) => {
+                let price = 0;
+                for(let i = 0; i < allProducts.length; i ++){
+                    if(product.productId === allProducts[i].productId){
+                        price = Number(allProducts[i].price.slice(0, -4));
+                    }
+                }
+                return sum + price * product.number;
+            }, 0)
+
+
             return `
                 <div>
                     <h1>New Order</h1>
                     <hr>
                     ${productListHTML}
-                    <h4>Total: 937 EUR</h6>
+                    <h4>Total: ${totalPrice} EUR</h6>
                     <h2>Shipping Details</h2>
                     <hr>
                     <p> <b>Full Name:</b> ${formDetails.fullName} </p>
@@ -44,9 +64,10 @@ const service = {
         }
 
         const products = await getProducts();
-        const htmlContent = composeHtmlContent(products);
+        const allProducts = await getAllProducts();
+        const htmlContent = composeHtmlContent(products, allProducts);
 
-        send_email(USER_EMAIL, "razvan.atanasov@osubb.ro", "New Order - Shopping APP", htmlContent);
+        await send_email(USER_EMAIL, "razvan.atanasov@osubb.ro", "New Order - Shopping APP", htmlContent);
         return 200;
     },
 };

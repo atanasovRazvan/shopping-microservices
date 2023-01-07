@@ -14,9 +14,9 @@ storage.init().then(() => {
 );
 
 const routes = require('./routes/routes');
+const {PORT} = require("./config");
 routes(app);
-const port = process.env.PORT || 8080;
 
-app.listen(port, () => {
-    console.log(`Listening to http://localhost:${port}`);
+app.listen(PORT, () => {
+    console.log(`Listening to http://localhost:${PORT}`);
 });
